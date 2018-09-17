@@ -34,7 +34,7 @@ void Downloader::on_btnFormat_released()
 	
 	QString searchTxt("format code  extension  resolution note");
 	int lenghtSearchTxt(searchTxt.count()+1);
-	QString strGetFormat = "youtube-dl.exe -Fasdfe " + m_strURL;
+	QString strGetFormat = "youtube-dl.exe -F " + m_strURL;
 
 	// Start the youtube-dl process to get the availabel formats
 	m_DownLoadProcess->start(strGetFormat);
@@ -101,6 +101,10 @@ void Downloader::readyReadStandardOutput()
 		{
 			QString strPos(string.left(pos-2));
 			int progress = strPos.toInt();
+			if (progress > 100)
+			{
+				progress = 100;
+			}
 			ui.progressBar->setValue(progress);
 		}
 	}
