@@ -2,6 +2,7 @@
 
 #include <qclipboard.h>
 #include <qscrollbar.h>
+#include <qcolor.h>
 
 
 
@@ -14,7 +15,9 @@ Downloader::Downloader(QWidget *parent)
 
 	connect(m_DownLoadProcess, SIGNAL(started()), this, SLOT(processStarted()));
 	connect(m_DownLoadProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readyReadStandardOutput()));
+	connect(m_DownLoadProcess, SIGNAL(readyReadStandardError()), this, SLOT(readyReadStandardError()));
 	connect(m_DownLoadProcess, SIGNAL(finished(int)), this, SLOT(processFinished()));
+	
 }
 
 
@@ -31,7 +34,7 @@ void Downloader::on_btnFormat_released()
 	
 	QString searchTxt("format code  extension  resolution note");
 	int lenghtSearchTxt(searchTxt.count()+1);
-	QString strGetFormat = "youtube-dl.exe -F " + m_strURL;
+	QString strGetFormat = "youtube-dl.exe -Fasdfe " + m_strURL;
 
 	// Start the youtube-dl process to get the availabel formats
 	m_DownLoadProcess->start(strGetFormat);
@@ -106,7 +109,17 @@ void Downloader::readyReadStandardOutput()
 	m_lineCount++;
 	
 	// put the slider at the bottom
-	ui.txtOutput->verticalScrollBar()->setSliderPosition(ui.txtOutput->verticalScrollBar()->maximum());
+	ui.txtOutput->verticalScrollBar()->setValue(ui.txtOutput->verticalScrollBar()->maximum());
+	qApp->processEvents();
+}
+
+void Downloader::readyReadStandardError()
+{
+	QString newString(m_DownLoadProcess->readAllStandardError());
+	ui.txtEdit->setTextColor(Qt::red);
+	m_OutputString.append(newString);
+	ui.txtEdit->setPlainText(m_OutputString);
+	ui.txtEdit->verticalScrollBar()->setValue(ui.txtEdit->verticalScrollBar()->maximum());
 	qApp->processEvents();
 }
 

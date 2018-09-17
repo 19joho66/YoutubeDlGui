@@ -25,5 +25,6 @@ private slots:
 	void on_btnDownload_released();
 	void processStarted();
 	void readyReadStandardOutput();
+	void readyReadStandardError();
 	void processFinished();
 };
