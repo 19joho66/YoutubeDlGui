@@ -3,12 +3,18 @@
 #include <qclipboard.h>
 #include <qscrollbar.h>
 #include <qcolor.h>
+#include <qfiledialog.h>
+#include <qsettings.h>
+#include "AudioDlg.h"
 
 
 
 Downloader::Downloader(QWidget *parent)
 	: QMainWindow(parent),
-	m_strURL("")
+	m_strURL(""), 
+	m_Settings("downloader.ini", QSettings::IniFormat),
+	m_AudioSettings()
+
 {
 	ui.setupUi(this);
 	m_DownLoadProcess = new QProcess(this);
@@ -17,7 +23,20 @@ Downloader::Downloader(QWidget *parent)
 	connect(m_DownLoadProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readyReadStandardOutput()));
 	connect(m_DownLoadProcess, SIGNAL(readyReadStandardError()), this, SLOT(readyReadStandardError()));
 	connect(m_DownLoadProcess, SIGNAL(finished(int)), this, SLOT(processFinished()));
+	m_filePath = m_Settings.value("Folder","").toString();
+	m_Options = m_Settings.value("Options", "").toString();
+	m_AudioFormat = m_Settings.value("AudioOptions", "").toString();
+	ui.edtFolder->setText(m_filePath);
+	ui.edtOptions->setText(m_Options);
+	ui.cmbFormat->addItem("None");
+	ui.edtAudioSettings->setText("");
 	
+}
+
+Downloader::~Downloader()
+{
+	m_Options = ui.edtOptions->text();
+	m_Settings.setValue("Options", m_Options);
 }
 
 
@@ -31,7 +50,12 @@ void Downloader::on_btnPaste_released()
 void Downloader::on_btnFormat_released()
 {
 	ui.cmbFormat->clear();
-	
+
+	if (m_strURL == "")
+	{
+		m_strURL = ui.lnURL->text();
+	}
+
 	QString searchTxt("format code  extension  resolution note");
 	int lenghtSearchTxt(searchTxt.count()+1);
 	QString strGetFormat = "youtube-dl.exe -F " + m_strURL;
@@ -40,12 +64,14 @@ void Downloader::on_btnFormat_released()
 	m_DownLoadProcess->start(strGetFormat);
 	m_DownLoadProcess->waitForFinished();
 	
+	ui.cmbFormat->clear();
 	
 	QStringList outStrings = m_OutputString.split("\n");
 	outStrings.removeAll(QString("")); 
 	
 	bool getFormats(false);
-	
+	ui.cmbFormat->addItem("None");
+
 	for (auto string : outStrings)
 	{
 		if(getFormats)
@@ -54,7 +80,7 @@ void Downloader::on_btnFormat_released()
 			lstFormat.removeAll(QString(""));
 			
 			QVariant code(lstFormat[0]);
-			QString strFormat(lstFormat[1] + " " + lstFormat[2]);
+			QString strFormat(lstFormat[0] + " " + lstFormat[1] + " " + lstFormat[2]);
 			ui.cmbFormat->addItem(strFormat,code);
 		}
 		else if (string == "format code  extension  resolution note")
@@ -69,11 +95,23 @@ void Downloader::on_btnFormat_released()
 
 void  Downloader::on_btnDownload_released()
 {
+
 	if (ui.cmbFormat->count())
 	{
 		ui.progressBar->setValue(0);
-		QString format(ui.cmbFormat->currentData().toString());
-		QString getVideo("youtube-dl.exe -f " + format + "  -o ""%(title)s.%(ext)s""  " + m_strURL);
+		QString format("");
+		
+		QString selectedFormat(ui.cmbFormat->currentData().toString());
+		
+		if (ui.cmbFormat->currentText() != "None" )
+		{
+			format.append("-f " + ui.cmbFormat->currentData().toString());
+		}
+		//QString format(ui.cmbFormat->currentData().toString());
+		QString options(ui.edtOptions->text());
+		QString output(m_filePath + "/""%(title)s (%(autonumber)s).%(ext)s""" );
+		//QString getVideo("youtube-dl.exe -f " + format + "  -o " + m_filePath + "/""%(title)s.%(ext)s"" "   + m_strURL);
+		QString getVideo("youtube-dl.exe --newline -i --ignore-config " + format + " " + options + " " + m_AudioSettings.GetSettingsString() + "-o " + "\"" + output + "\" " + m_strURL);
 		m_DownLoadProcess->start(getVideo);
 	}
 }
@@ -83,6 +121,7 @@ void Downloader::processStarted()
 	m_lineCount = 0;
 	m_OutputString = "";
 	ui.txtOutput->setPlainText(m_OutputString);
+	ui.txtEdit->setPlainText(m_OutputString);
 	qApp->processEvents();
 }
 
@@ -129,5 +168,34 @@ void Downloader::readyReadStandardError()
 
 void Downloader::processFinished()
 {
+
+}
+
+void Downloader::on_btnFolder_released()
+{
+
+	m_filePath = QFileDialog::getExistingDirectory(this, "Get Any File");
+	ui.edtFolder->setText(m_filePath);
+
+	m_Settings.setValue("Folder", m_filePath);
+
+}
+
+void Downloader::on_lnUrl_drop() 
+{
+	m_strURL = ui.lnURL->text();
+}
+
+void Downloader::on_btnAudio_released()
+{
+	QString AudioString(m_AudioFormat);
+	AudioSettings audioSettings(m_AudioSettings);
+	auto audioDlg = new AudioDlg(audioSettings, this);
+	if (audioDlg->exec())
+	{
+		m_AudioSettings = audioSettings;
+	}
+
+	ui.edtAudioSettings->setText(m_AudioSettings.GetSettingsString());
 
 }

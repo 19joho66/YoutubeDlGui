@@ -36,9 +36,15 @@
     <ClCompile Include="Downloader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AudioDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Downloader.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="AudioDlg.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -46,10 +52,21 @@
     <QtUic Include="Downloader.ui">
       <Filter>Form Files</Filter>
     </QtUic>
+    <QtUic Include="AudioOptions.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="Downloader.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GeneratedFiles\ui_AudioOptions.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_Downloader.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
