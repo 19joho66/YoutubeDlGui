@@ -27,7 +27,9 @@ private:
 	AudioSettings m_AudioSettings;
 	QString m_AudioFormat;
 	QSettings m_Settings;
+
 	int m_lineCount;
+	bool m_gettingFormats;
 
 private slots:
 	void on_btnPaste_released();
@@ -40,4 +42,5 @@ private slots:
 	void readyReadStandardOutput();
 	void readyReadStandardError();
 	void processFinished();
+	void on_cmbFormat_currentIndexChanged(int index);
 };

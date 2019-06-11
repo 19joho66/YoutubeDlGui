@@ -5,6 +5,7 @@
 #include <qcolor.h>
 #include <qfiledialog.h>
 #include <qsettings.h>
+#include <qmessagebox.h>
 #include "AudioDlg.h"
 
 
@@ -13,7 +14,8 @@ Downloader::Downloader(QWidget *parent)
 	: QMainWindow(parent),
 	m_strURL(""), 
 	m_Settings("downloader.ini", QSettings::IniFormat),
-	m_AudioSettings()
+	m_AudioSettings(),
+	m_gettingFormats(false)
 
 {
 	ui.setupUi(this);
@@ -49,7 +51,11 @@ void Downloader::on_btnPaste_released()
 
 void Downloader::on_btnFormat_released()
 {
+	m_gettingFormats = true;
 	ui.cmbFormat->clear();
+
+	QMessageBox msgBox;
+	
 
 	if (m_strURL == "")
 	{
@@ -60,9 +66,15 @@ void Downloader::on_btnFormat_released()
 	int lenghtSearchTxt(searchTxt.count()+1);
 	QString strGetFormat = "youtube-dl.exe -F " + m_strURL;
 
-	// Start the youtube-dl process to get the availabel formats
 	m_DownLoadProcess->start(strGetFormat);
-	m_DownLoadProcess->waitForFinished();
+
+	if (false == m_DownLoadProcess->waitForFinished())
+	{
+		msgBox.setText("Timeout oder Youtube-dl.exe konnte nicht gestartet werden");
+		msgBox.exec();
+	}
+	
+
 	
 	ui.cmbFormat->clear();
 	
@@ -89,9 +101,34 @@ void Downloader::on_btnFormat_released()
 		}
 	}
 	
+	m_gettingFormats = false;
 
 }
 
+void Downloader::on_cmbFormat_currentIndexChanged(int index)
+{
+	if (m_gettingFormats)
+	{
+		return;
+	}
+
+	QString format("");
+
+	if (ui.cmbFormat->currentText() != "None")
+	{
+		
+		format.append("-f " + ui.cmbFormat->currentData().toString());
+		
+	}
+	else
+	{
+		format.append("-f ");
+	}
+
+	ui.edtFormat->setText(format);
+
+
+}
 
 void  Downloader::on_btnDownload_released()
 {
@@ -99,19 +136,11 @@ void  Downloader::on_btnDownload_released()
 	if (ui.cmbFormat->count())
 	{
 		ui.progressBar->setValue(0);
-		QString format("");
 		
 		QString selectedFormat(ui.cmbFormat->currentData().toString());
-		
-		if (ui.cmbFormat->currentText() != "None" )
-		{
-			format.append("-f " + ui.cmbFormat->currentData().toString());
-		}
-		//QString format(ui.cmbFormat->currentData().toString());
 		QString options(ui.edtOptions->text());
 		QString output(m_filePath + "/""%(title)s (%(autonumber)s).%(ext)s""" );
-		//QString getVideo("youtube-dl.exe -f " + format + "  -o " + m_filePath + "/""%(title)s.%(ext)s"" "   + m_strURL);
-		QString getVideo("youtube-dl.exe --newline -i --ignore-config " + format + " " + options + " " + m_AudioSettings.GetSettingsString() + "-o " + "\"" + output + "\" " + m_strURL);
+		QString getVideo("youtube-dl.exe --newline -i --ignore-config " + ui.edtFormat->text() + " " + options + " " + m_AudioSettings.GetSettingsString() + "-o " + "\"" + output + "\" " + m_strURL);
 		m_DownLoadProcess->start(getVideo);
 	}
 }
@@ -135,16 +164,32 @@ void Downloader::readyReadStandardOutput()
 	{
 
 		int pos = string.indexOf('%');
+		
 
 		if (pos > 0)
 		{
-			QString strPos(string.left(pos-2));
+			auto decPos = string.indexOf('.');
+			QString strPos("");
+
+			if (decPos > 0 && decPos < pos)
+			{
+				strPos=string.left(pos - 2);
+			}
+			else
+			{
+				strPos=string.left(pos);
+			}
+
 			int progress = strPos.toInt();
 			if (progress > 100)
 			{
 				progress = 100;
 			}
-			ui.progressBar->setValue(progress);
+			else
+			{
+				ui.progressBar->setValue(progress);
+			}
+			
 		}
 	}
 	m_OutputString.append(newString);
