@@ -95,7 +95,7 @@ void Downloader::on_btnFormat_released()
 			QString strFormat(lstFormat[0] + " " + lstFormat[1] + " " + lstFormat[2]);
 			ui.cmbFormat->addItem(strFormat,code);
 		}
-		else if (string == "format code  extension  resolution note")
+		else if (string.left(6) == "format")
 		{
 			getFormats = true;
 		}
